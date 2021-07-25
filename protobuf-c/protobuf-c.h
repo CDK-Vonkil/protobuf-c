@@ -196,7 +196,9 @@ size_t foo__bar__baz_bah__pack_to_buffer
 #ifndef PROTOBUF_C_H
 #define PROTOBUF_C_H
 
+#if !defined(PROTOBUF_C__BARE_METAL)
 #include <assert.h>
+#endif
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>

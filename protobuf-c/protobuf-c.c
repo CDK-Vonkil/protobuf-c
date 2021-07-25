@@ -45,7 +45,9 @@
  * \todo Use size_t consistently.
  */
 
+#if !defined(PROTOBUF_C__BARE_METAL)
 #include <stdlib.h>	/* for malloc, free */
+#endif
 #include <string.h>	/* for strcmp, strlen, memcpy, memmove, memset */
 
 #include "protobuf-c.h"
@@ -53,7 +55,11 @@
 #define TRUE				1
 #define FALSE				0
 
+#if defined(PROTOBUF_C__BARE_METAL)
+#define PROTOBUF_C__ASSERT_NOT_REACHED()
+#else
 #define PROTOBUF_C__ASSERT_NOT_REACHED() assert(0)
+#endif
 
 /* Workaround for Microsoft compilers. */
 #ifdef _MSC_VER
@@ -115,6 +121,12 @@ const char protobuf_c_empty_string[] = "";
 #define STRUCT_MEMBER_PTR(member_type, struct_p, struct_offset) \
     ((member_type *) STRUCT_MEMBER_P((struct_p), (struct_offset)))
 
+#if defined(PROTOBUF_C__BARE_METAL)
+#define ASSERT_IS_ENUM_DESCRIPTOR(desc)
+#define ASSERT_IS_MESSAGE_DESCRIPTOR(desc)
+#define ASSERT_IS_MESSAGE(message)
+#define ASSERT_IS_SERVICE_DESCRIPTOR(desc)
+#else
 /* Assertions for magic numbers. */
 
 #define ASSERT_IS_ENUM_DESCRIPTOR(desc) \
@@ -128,6 +140,7 @@ const char protobuf_c_empty_string[] = "";
 
 #define ASSERT_IS_SERVICE_DESCRIPTOR(desc) \
 	assert((desc)->magic == PROTOBUF_C__SERVICE_DESCRIPTOR_MAGIC)
+#endif
 
 /**@}*/
 
@@ -151,14 +164,20 @@ static void *
 system_alloc(void *allocator_data, size_t size)
 {
 	(void)allocator_data;
+#if defined(PROTOBUF_C__BARE_METAL)
+        return NULL;
+#else
 	return malloc(size);
+#endif
 }
 
 static void
 system_free(void *allocator_data, void *data)
 {
 	(void)allocator_data;
+#if !defined(PROTOBUF_C__BARE_METAL)
 	free(data);
+#endif
 }
 
 static inline void *
@@ -1437,7 +1456,9 @@ repeated_field_pack(const ProtobufCFieldDescriptor *field,
 		payload_len = payload_at - (out + header_len);
 		actual_length_size = uint32_size(payload_len);
 		if (length_size_min != actual_length_size) {
+#if !defined(PROTOBUF_C__BARE_METAL)
 			assert(actual_length_size == length_size_min + 1);
+#endif
 			memmove(out + header_len + 1, out + header_len,
 				payload_len);
 			header_len++;
@@ -1923,7 +1944,9 @@ repeated_field_pack_to_buffer(const ProtobufCFieldDescriptor *field,
 		rv += uint32_pack(payload_len, scratch + rv);
 		buffer->append(buffer, rv, scratch);
 		tmp = pack_buffer_packed_payload(field, count, array, buffer);
+#if !defined(PROTOBUF_C__BARE_METAL)
 		assert(tmp == payload_len);
+#endif
 		return rv + payload_len;
 	} else {
 		size_t siz;
@@ -3239,7 +3262,9 @@ protobuf_c_message_unpack(const ProtobufCMessageDescriptor *desc,
 				unsigned n = *n_ptr;
 				void *a;
 				*n_ptr = 0;
+#if !defined(PROTOBUF_C__BARE_METAL)
 				assert(rv->descriptor != NULL);
+#endif
 #define CLEAR_REMAINING_N_PTRS()                                              \
               for(f++;f < desc->n_fields; f++)                                \
                 {                                                             \
@@ -3513,7 +3538,9 @@ protobuf_c_service_invoke_internal(ProtobufCService *service,
 	 * likely invoking a newly added method on an old service. (Although
 	 * other memory corruption bugs can cause this assertion too.)
 	 */
+#if !defined(PROTOBUF_C__BARE_METAL)
 	assert(method_index < service->descriptor->n_methods);
+#endif
 
 	/*
 	 * Get the array of virtual methods (which are enumerated by the
